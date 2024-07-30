@@ -9,7 +9,11 @@ async function bootstrap() {
   const uploadthingService = app.get(UploadthingService);
 
   // app.use("/api/uploadthing", uploadthingService.getRouteHandler());
-
+  app.enableCors({
+    origin: 'https://vcomics.vercel.app/', // Replace with your Vercel app's domain
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    credentials: true,
+  });
   const port = configService.get('PORT') || 3000;
   await app.listen(port);
 }
