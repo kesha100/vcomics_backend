@@ -310,7 +310,7 @@ export class ComicsService {
               weight: 0.5,
             },
           ],
-          style_preset: 'comic-book',
+          // style_preset: 'comic-book',
           cfg_scale: 7,
           height: 1024,
           width: 1024,
