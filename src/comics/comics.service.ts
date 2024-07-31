@@ -1,6 +1,6 @@
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
-import { Injectable } from '@nestjs/common';
+import { Injectable,  HttpException, HttpStatus } from '@nestjs/common';
 import { v4 as uuidv4 } from 'uuid';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { OpenAI } from 'openai';
@@ -10,6 +10,8 @@ import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import sharp from 'sharp';
 import { PanelService } from '../panel/panel.service';
+
+
 interface Panel {
   panel: number;
   description: string;
@@ -50,42 +52,43 @@ export class ComicsService {
   }
 
   /// for faster 12panels generation
-  async createPanelImage(panel: Panel): Promise<string> {
-    const panelImageUrl = await this.generateImageUsingStability(
-      panel.description,
-      panel.panel,
-    );
-    console.log(panelImageUrl);
-    const outputImagePath = `panel_${panel.panel}_with_text.png`;
-    const imageWithTextBuffer = await this.panelService.addTextToImage(
-      panel.text,
-      panelImageUrl,
-      outputImagePath,
-    );
-    console.log(imageWithTextBuffer);
-    // Upload the image with text to Supabase
-    const fileName = `panel-${panel.panel}-with-text-${Date.now()}.webp`;
-    const { error, data } = await this.supabase.storage
-      .from('vcomics')
-      .upload(fileName, imageWithTextBuffer, {
-        contentType: 'image/webp',
-      });
+  // async createPanelImage(panel: Panel): Promise<string> {
+  //   const panelImageUrl = await this.generateImageUsingStability(
+  //     panel.description,
+  //     panel.panel,
+  //   );
+  //   console.log(panelImageUrl);
+  //   const outputImagePath = `panel_${panel.panel}_with_text.png`;
+  //   const imageWithTextBuffer = await this.panelService.addTextToImage(
+  //     panel.text,
+  //     panelImageUrl,
+  //     outputImagePath,
+      
+  //   );
+  //   console.log(imageWithTextBuffer);
+  //   // Upload the image with text to Supabase
+  //   const fileName = `panel-${panel.panel}-with-text-${Date.now()}.webp`;
+  //   const { error, data } = await this.supabase.storage
+  //     .from('vcomics')
+  //     .upload(fileName, imageWithTextBuffer, {
+  //       contentType: 'image/webp',
+  //     });
 
-    if (error) {
-      throw new Error(
-        `Failed to upload image with text to Supabase: ${error.message}`,
-      );
-    }
+  //   if (error) {
+  //     throw new Error(
+  //       `Failed to upload image with text to Supabase: ${error.message}`,
+  //     );
+  //   }
 
-    const { data: publicUrlData } = this.supabase.storage
-      .from('vcomics')
-      .getPublicUrl(data.path);
+  //   const { data: publicUrlData } = this.supabase.storage
+  //     .from('vcomics')
+  //     .getPublicUrl(data.path);
 
-    // Save panel data to the database
-    await this.savePanelData(publicUrlData.publicUrl, panel.text);
+  //   // Save panel data to the database
+  //   await this.savePanelData(publicUrlData.publicUrl, panel.text);
 
-    return publicUrlData.publicUrl;
-  }
+  //   return publicUrlData.publicUrl;
+  // }
 
   async resizeImage(
     imageBuffer: Buffer,
@@ -355,13 +358,33 @@ export class ComicsService {
       },
     });
   }
+  async getComicGenerationCount(ipAddress: string): Promise<number> {
+    const record = await this.prisma.comicGeneration.findUnique({
+      where: { ipAddress },
+    });
+    return record ? record.count : 0;
+  }
+
+  private async incrementComicGenerationCount(ipAddress: string): Promise<void> {
+    await this.prisma.comicGeneration.upsert({
+      where: { ipAddress },
+      update: { count: { increment: 1 } },
+      create: { ipAddress, count: 1 },
+    });
+  }
 
   ///main function
   async createComicFromImage(
     imageFile: Express.Multer.File,
     userPrompt: string,
+    ipAddress: string
   ): Promise<any> {
     console.log('Received image file length:', imageFile);
+    const count = await this.getComicGenerationCount(ipAddress);
+  if (count >= 3) {
+    throw new HttpException('Free comic generation limit reached', HttpStatus.FORBIDDEN);
+  }
+
 
     try {
       // Convert the image to base64
@@ -402,12 +425,14 @@ export class ComicsService {
           panel: -1,
         };
 
-        promises.push(this.createPanelImage(panel));
+        // promises.push(this.createPanelImage(panel));
       }
-
+      await this.incrementComicGenerationCount(ipAddress);
+      const newCount = await this.getComicGenerationCount(ipAddress);
+      const remainingTries = Math.max(0, 3 - newCount);
       const panelImageUrls = await Promise.all(promises);
 
-      return { jobId, status: 'queued', panelImageUrls };
+      return { jobId, status: 'queued', panelImageUrls, remainingTries };
     } catch (error) {
       console.error('Error in createComicFromImage:', error);
       throw error;

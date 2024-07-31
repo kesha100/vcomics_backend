@@ -3,12 +3,14 @@ import {
   Body,
   Controller,
   Post,
+  Get,
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
 import { ComicsService } from './comics.service';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { BullBoardInstance, InjectBullBoard } from '@bull-board/nestjs';
+import { IpAddress } from './ip-address.decorator'; // Import the decorator
 
 interface Panel {
   panel: number;
@@ -49,27 +51,26 @@ export class ComicsController {
     return scenarioJson;
   }
 
-  @Post('create-panel-image')
-  async createPanelImage(@Body('panel') panel: Panel) {
-    const imageUrl = await this.comicsService.createPanelImage(panel);
-    return imageUrl;
-  }
+  // @Post('create-panel-image')
+  // async createPanelImage(@Body('panel') panel: Panel) {
+  //   const imageUrl = await this.comicsService.createPanelImage(panel);
+  //   return imageUrl;
+  // }
 
   @Post('create-comic')
   @UseInterceptors(FileInterceptor('image'))
   async createComic(
     @UploadedFile() file: Express.Multer.File,
     @Body('prompt') prompt: string,
+    @IpAddress() ipAddress: string
   ) {
-    if (!file || !prompt) {
-      throw new BadRequestException('Image and prompt are required');
-    }
+    
 
-    console.log('Received file:', {
-      originalname: file.originalname,
-      mimetype: file.mimetype,
-      size: file.size,
-    });
+    // console.log('Received file:', {
+    //   originalname: file.originalname,
+    //   mimetype: file.mimetype,
+    //   size: file.size,
+    // });
 
     if (file.size < 1000) {
       // Adjust this threshold as needed
@@ -79,8 +80,15 @@ export class ComicsController {
     const comicPanels = await this.comicsService.createComicFromImage(
       file,
       prompt,
+      ipAddress
     );
 
     return { panels: comicPanels };
   }
+  @Get('remaining-tries')
+  async getRemainingTries(@IpAddress() ipAddress: string): Promise<{ remainingTries: number }> {
+    const count = await this.comicsService.getComicGenerationCount(ipAddress);
+    const remainingTries = Math.max(0, 3 - count);
+    return { remainingTries };
+  }   
 }
