@@ -349,7 +349,7 @@ export class ComicsService {
     return temp.publicUrl;
   }
 
-  ///saves in database
+  // /saves in database
   async savePanelData(panelImageUrl: string, panelText: string[]) {
     return this.prisma.panel.create({
       data: {
@@ -358,32 +358,32 @@ export class ComicsService {
       },
     });
   }
-  async getComicGenerationCount(ipAddress: string): Promise<number> {
-    const record = await this.prisma.comicGeneration.findUnique({
-      where: { ipAddress },
-    });
-    return record ? record.count : 0;
-  }
+  // async getComicGenerationCount(ipAddress: string): Promise<number> {
+  //   const record = await this.prisma.comicGeneration.findUnique({
+  //     where: { ipAddress },
+  //   });
+  //   return record ? record.count : 0;
+  // }
 
-  private async incrementComicGenerationCount(ipAddress: string): Promise<void> {
-    await this.prisma.comicGeneration.upsert({
-      where: { ipAddress },
-      update: { count: { increment: 1 } },
-      create: { ipAddress, count: 1 },
-    });
-  }
+  // private async incrementComicGenerationCount(ipAddress: string): Promise<void> {
+  //   await this.prisma.comicGeneration.upsert({
+  //     where: { ipAddress },
+  //     update: { count: { increment: 1 } },
+  //     create: { ipAddress, count: 1 },
+  //   });
+  // }
 
   ///main function
   async createComicFromImage(
     imageFile: Express.Multer.File,
     userPrompt: string,
-    ipAddress: string
+    // ipAddress: string
   ): Promise<any> {
     console.log('Received image file length:', imageFile);
-    const count = await this.getComicGenerationCount(ipAddress);
-  if (count >= 3) {
-    throw new HttpException('Free comic generation limit reached', HttpStatus.FORBIDDEN);
-  }
+  //   const count = await this.getComicGenerationCount(ipAddress);
+  // if (count >= 3) {
+  //   throw new HttpException('Free comic generation limit reached', HttpStatus.FORBIDDEN);
+  // }
 
 
     try {
@@ -427,12 +427,12 @@ export class ComicsService {
 
         promises.push(this.createPanelImage(panel));
       }
-      await this.incrementComicGenerationCount(ipAddress);
-      const newCount = await this.getComicGenerationCount(ipAddress);
-      const remainingTries = Math.max(0, 3 - newCount);
+      // await this.incrementComicGenerationCount(ipAddress);
+      // const newCount = await this.getComicGenerationCount(ipAddress);
+      // const remainingTries = Math.max(0, 3 - newCount);
       const panelImageUrls = await Promise.all(promises);
 
-      return { jobId, status: 'queued', panelImageUrls, remainingTries };
+      return { jobId, status: 'queued', panelImageUrls };
     } catch (error) {
       console.error('Error in createComicFromImage:', error);
       throw error;

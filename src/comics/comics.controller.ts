@@ -80,15 +80,14 @@ export class ComicsController {
     const comicPanels = await this.comicsService.createComicFromImage(
       file,
       prompt,
-      ipAddress
     );
 
     return { panels: comicPanels };
   }
-  @Get('remaining-tries')
-  async getRemainingTries(@IpAddress() ipAddress: string): Promise<{ remainingTries: number }> {
-    const count = await this.comicsService.getComicGenerationCount(ipAddress);
-    const remainingTries = Math.max(0, 3 - count);
-    return { remainingTries };
-  }   
+  // @Get('remaining-tries')
+  // async getRemainingTries(@IpAddress() ipAddress: string): Promise<{ remainingTries: number }> {
+  //   const count = await this.comicsService.getComicGenerationCount(ipAddress);
+  //   const remainingTries = Math.max(0, 5 - count);
+  //   return { remainingTries };
+  // }   
 }
