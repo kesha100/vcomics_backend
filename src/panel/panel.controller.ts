@@ -13,12 +13,7 @@ export class PanelController {
     @Body('text') text: string[],
     @IpAddress() ipAddress: string
   ): Promise<void> {
-    await this.panelService.addTextToImage(text, imageUrl, outputImagePath, ipAddress);
+    await this.panelService.addTextToImage(text, imageUrl, outputImagePath);
   }
-  @Get('remaining-tries')
-  async getRemainingTries(@IpAddress() ipAddress: string): Promise<{ remainingTries: number }> {
-    const count = await this.panelService.getComicGenerationCount(ipAddress);
-    const remainingTries = Math.max(0, 3 - count);
-    return { remainingTries };
-  }  
+    
 }

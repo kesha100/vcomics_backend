@@ -15,35 +15,31 @@ interface Panel {
 export class PanelService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getComicGenerationCount(ipAddress: string): Promise<number> {
-    const record = await this.prisma.comicGeneration.findUnique({
-      where: { ipAddress },
-    });
-    return record ? record.count : 0;
-  }
+  // async getComicGenerationCount(ipAddress: string): Promise<number> {
+  //   const record = await this.prisma.comicGeneration.findUnique({
+  //     where: { ipAddress },
+  //   });
+  //   return record ? record.count : 0;
+  // }
 
-  private async incrementComicGenerationCount(ipAddress: string): Promise<void> {
-    await this.prisma.comicGeneration.upsert({
-      where: { ipAddress },
-      update: { count: { increment: 1 } },
-      create: { ipAddress, count: 1 },
-    });
-  }
+  // private async incrementComicGenerationCount(ipAddress: string): Promise<void> {
+  //   await this.prisma.comicGeneration.upsert({
+  //     where: { ipAddress },
+  //     update: { count: { increment: 1 } },
+  //     create: { ipAddress, count: 1 },
+  //   });
+  // }
   async addTextToImage(
     text: string[],
     imageUrl: string,
     outputImagePath: string,
-    ipAddress:string
   ): Promise<Buffer> {
     try {
-      console.log(ipAddress)
+      
       const response = await fetch(imageUrl);
       const blob = await response.blob();
       const imageBuffer = await blob.arrayBuffer();
-      const count = await this.getComicGenerationCount(ipAddress);
-  if (count >= 3) {
-    throw new HttpException('Free comic generation limit reached', HttpStatus.FORBIDDEN);
-  }
+      
 
       console.log({ imageBuffer });
       console.log({ blob, imageUrl });
@@ -67,7 +63,6 @@ export class PanelService {
         outputImagePath,
       );
       await sharp(buffer).toFile(fullOutputPath);
-      await this.incrementComicGenerationCount(ipAddress);
 
       return buffer; // Return the buffer instead of void
     } catch (error) {

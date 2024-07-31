@@ -52,43 +52,43 @@ export class ComicsService {
   }
 
   /// for faster 12panels generation
-  // async createPanelImage(panel: Panel): Promise<string> {
-  //   const panelImageUrl = await this.generateImageUsingStability(
-  //     panel.description,
-  //     panel.panel,
-  //   );
-  //   console.log(panelImageUrl);
-  //   const outputImagePath = `panel_${panel.panel}_with_text.png`;
-  //   const imageWithTextBuffer = await this.panelService.addTextToImage(
-  //     panel.text,
-  //     panelImageUrl,
-  //     outputImagePath,
+  async createPanelImage(panel: Panel): Promise<string> {
+    const panelImageUrl = await this.generateImageUsingStability(
+      panel.description,
+      panel.panel,
+    );
+    console.log(panelImageUrl);
+    const outputImagePath = `panel_${panel.panel}_with_text.png`;
+    const imageWithTextBuffer = await this.panelService.addTextToImage(
+      panel.text,
+      panelImageUrl,
+      outputImagePath,
       
-  //   );
-  //   console.log(imageWithTextBuffer);
-  //   // Upload the image with text to Supabase
-  //   const fileName = `panel-${panel.panel}-with-text-${Date.now()}.webp`;
-  //   const { error, data } = await this.supabase.storage
-  //     .from('vcomics')
-  //     .upload(fileName, imageWithTextBuffer, {
-  //       contentType: 'image/webp',
-  //     });
+    );
+    console.log(imageWithTextBuffer);
+    // Upload the image with text to Supabase
+    const fileName = `panel-${panel.panel}-with-text-${Date.now()}.webp`;
+    const { error, data } = await this.supabase.storage
+      .from('vcomics')
+      .upload(fileName, imageWithTextBuffer, {
+        contentType: 'image/webp',
+      });
 
-  //   if (error) {
-  //     throw new Error(
-  //       `Failed to upload image with text to Supabase: ${error.message}`,
-  //     );
-  //   }
+    if (error) {
+      throw new Error(
+        `Failed to upload image with text to Supabase: ${error.message}`,
+      );
+    }
 
-  //   const { data: publicUrlData } = this.supabase.storage
-  //     .from('vcomics')
-  //     .getPublicUrl(data.path);
+    const { data: publicUrlData } = this.supabase.storage
+      .from('vcomics')
+      .getPublicUrl(data.path);
 
-  //   // Save panel data to the database
-  //   await this.savePanelData(publicUrlData.publicUrl, panel.text);
+    // Save panel data to the database
+    await this.savePanelData(publicUrlData.publicUrl, panel.text);
 
-  //   return publicUrlData.publicUrl;
-  // }
+    return publicUrlData.publicUrl;
+  }
 
   async resizeImage(
     imageBuffer: Buffer,
@@ -425,7 +425,7 @@ export class ComicsService {
           panel: -1,
         };
 
-        // promises.push(this.createPanelImage(panel));
+        promises.push(this.createPanelImage(panel));
       }
       await this.incrementComicGenerationCount(ipAddress);
       const newCount = await this.getComicGenerationCount(ipAddress);
