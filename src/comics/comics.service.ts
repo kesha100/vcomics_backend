@@ -149,7 +149,7 @@ export class ComicsService {
   }
 
   ///generates scenario from imageDescription
-  async generateScenario(imageDescription: string, prompt: string) {
+  async generateScenario(imageDescription: string, prompt: string, language: string) {
     const style = 'american modern';
     const response = await this.openai.chat.completions.create({
       model: 'gpt-4o-mini',
@@ -215,7 +215,7 @@ export class ComicsService {
         {
           role: 'user',
           content: `Промпт юзера ${prompt}\n\n Описание фотографии, которую скинул юзер ${imageDescription} + стиль комикса в  ${style}
-          "text" напиши на русском, но description оставь на английском`,
+          "text" напиши на ${language}, но description оставь на английском`,
         },
       ],
       response_format: {
@@ -377,6 +377,7 @@ export class ComicsService {
   async createComicFromImage(
     imageFile: Express.Multer.File,
     userPrompt: string,
+    language: string
     // ipAddress: string
   ): Promise<any> {
     console.log('Received image file length:', imageFile);
@@ -397,6 +398,7 @@ export class ComicsService {
       const scenarioDescription = await this.generateScenario(
         imageDescription,
         userPrompt,
+        language
       );
       console.log(
         'Scenario description:',
