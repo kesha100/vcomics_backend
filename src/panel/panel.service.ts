@@ -35,11 +35,9 @@ export class PanelService {
     outputImagePath: string,
   ): Promise<Buffer> {
     try {
-      
       const response = await fetch(imageUrl);
       const blob = await response.blob();
       const imageBuffer = await blob.arrayBuffer();
-      
 
       console.log({ imageBuffer });
       console.log({ blob, imageUrl });
@@ -49,8 +47,6 @@ export class PanelService {
       const image = await loadImage(pngBuffer);
       const canvas = createCanvas(image.width, image.height);
       const ctx = canvas.getContext('2d');
-
-      const joinedtext = text.join(', ');
 
       ctx.drawImage(image, 0, 0);
 

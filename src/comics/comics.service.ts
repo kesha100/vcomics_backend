@@ -1,6 +1,6 @@
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
-import { Injectable,  HttpException, HttpStatus } from '@nestjs/common';
+import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import { v4 as uuidv4 } from 'uuid';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { OpenAI } from 'openai';
@@ -10,7 +10,6 @@ import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import sharp from 'sharp';
 import { PanelService } from '../panel/panel.service';
-
 
 interface Panel {
   panel: number;
@@ -63,7 +62,6 @@ export class ComicsService {
       panel.text,
       panelImageUrl,
       outputImagePath,
-      
     );
     console.log(imageWithTextBuffer);
     // Upload the image with text to Supabase
@@ -149,7 +147,11 @@ export class ComicsService {
   }
 
   ///generates scenario from imageDescription
-  async generateScenario(imageDescription: string, prompt: string, language: string) {
+  async generateScenario(
+    imageDescription: string,
+    prompt: string,
+    language: string,
+  ) {
     const style = 'american modern';
     const response = await this.openai.chat.completions.create({
       model: 'gpt-4o-mini',
@@ -222,7 +224,7 @@ export class ComicsService {
         type: 'json_object',
       },
     });
-    const responseText = response.choices[0].message.content
+    const responseText = response.choices[0].message.content;
     console.log('Raw API Response:', responseText);
 
     let responseJson;
@@ -294,9 +296,9 @@ export class ComicsService {
     panelNumber: number,
   ): Promise<string> {
     const prompt = ` Generate In American modern comics style:${panelScenario}`;
-  
+
     console.log({ prompt });
-  
+
     const response = await fetch(
       'https://api.stability.ai/v1/generation/stable-diffusion-xl-1024-v1-0/text-to-image',
       {
@@ -322,30 +324,30 @@ export class ComicsService {
         }),
       },
     );
-  
+
     const arrayBuffer = await response.arrayBuffer();
     console.log({ arrayBuffer });
     const buffer = Buffer.from(arrayBuffer);
     const fileName = `panel-${panelNumber}-${Date.now()}.webp`;
-  
+
     console.log({ buffer });
-  
+
     const { error, data } = await this.supabase.storage
       .from('vcomics')
       .upload(fileName, buffer, {
         contentType: 'image/webp',
       });
-  
+
     console.log({ data });
-  
+
     if (error) {
       throw new Error(`Failed to upload image to Supabase: ${error.message}`);
     }
-  
+
     const { data: temp } = this.supabase.storage
       .from('vcomics')
       .getPublicUrl(data.path);
-  
+
     return temp.publicUrl;
   }
 
@@ -377,15 +379,14 @@ export class ComicsService {
   async createComicFromImage(
     imageFile: Express.Multer.File,
     userPrompt: string,
-    language: string
+    language: string,
     // ipAddress: string
-  ): Promise<any> {
+  ): Promise<string[]> {
     console.log('Received image file length:', imageFile);
-  //   const count = await this.getComicGenerationCount(ipAddress);
-  // if (count >= 3) {
-  //   throw new HttpException('Free comic generation limit reached', HttpStatus.FORBIDDEN);
-  // }
-
+    //   const count = await this.getComicGenerationCount(ipAddress);
+    // if (count >= 3) {
+    //   throw new HttpException('Free comic generation limit reached', HttpStatus.FORBIDDEN);
+    // }
 
     try {
       // Convert the image to base64
@@ -398,7 +399,7 @@ export class ComicsService {
       const scenarioDescription = await this.generateScenario(
         imageDescription,
         userPrompt,
-        language
+        language,
       );
       console.log(
         'Scenario description:',
@@ -434,7 +435,7 @@ export class ComicsService {
       // const remainingTries = Math.max(0, 3 - newCount);
       const panelImageUrls = await Promise.all(promises);
 
-      return { jobId, status: 'queued', panelImageUrls };
+      return panelImageUrls;
     } catch (error) {
       console.error('Error in createComicFromImage:', error);
       throw error;
