@@ -201,6 +201,7 @@ export class ComicsService {
           {scenario} 
 
           Разделите сценарий на 12 частей, обеспечив сохранение описаний персонажей во всех кадрах. Вы должны создавать комиксы в современном американском стиле. Верните ваш ответ в формате JSON массива панелей комиксов. "text" напиши на русском, но description оставь на английском. Например, рассмотрите этот JSON массив панелей комиксов:
+          "text": должен описывать слова персонажа, его речь.
           {
             "panels": [
               {
@@ -435,7 +436,7 @@ export class ComicsService {
       // const remainingTries = Math.max(0, 3 - newCount);
       const panelImageUrls = await Promise.all(promises);
 
-      return panelImageUrls;
+      return panelImageUrls ;
     } catch (error) {
       console.error('Error in createComicFromImage:', error);
       throw error;
