@@ -63,11 +63,8 @@ export class ComicsController {
     @UploadedFile() file: Express.Multer.File,
     @Body('prompt') prompt: string,
     @Body('language') language: string,
-    @IpAddress() ipAddress: string
-
+    @IpAddress() ipAddress: string,
   ) {
-    
-
     // console.log('Received file:', {
     //   originalname: file.originalname,
     //   mimetype: file.mimetype,
@@ -82,15 +79,15 @@ export class ComicsController {
     const comicPanels = await this.comicsService.createComicFromImage(
       file,
       prompt,
-      language
+      language,
     );
 
-    return { panels: comicPanels };
+    return { panels: { panelImageUrls: comicPanels } };
   }
   // @Get('remaining-tries')
   // async getRemainingTries(@IpAddress() ipAddress: string): Promise<{ remainingTries: number }> {
   //   const count = await this.comicsService.getComicGenerationCount(ipAddress);
   //   const remainingTries = Math.max(0, 5 - count);
   //   return { remainingTries };
-  // }   
+  // }
 }
