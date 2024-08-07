@@ -15,20 +15,6 @@ interface Panel {
 export class PanelService {
   constructor(private readonly prisma: PrismaService) {}
 
-  // async getComicGenerationCount(ipAddress: string): Promise<number> {
-  //   const record = await this.prisma.comicGeneration.findUnique({
-  //     where: { ipAddress },
-  //   });
-  //   return record ? record.count : 0;
-  // }
-
-  // private async incrementComicGenerationCount(ipAddress: string): Promise<void> {
-  //   await this.prisma.comicGeneration.upsert({
-  //     where: { ipAddress },
-  //     update: { count: { increment: 1 } },
-  //     create: { ipAddress, count: 1 },
-  //   });
-  // }
   async addTextToImage(
     text: string[],
     imageUrl: string,
@@ -60,7 +46,7 @@ export class PanelService {
       );
       await sharp(buffer).toFile(fullOutputPath);
 
-      return buffer; // Return the buffer instead of void
+      return buffer;
     } catch (error) {
       console.error('Error processing image:', error);
       throw new Error('Failed to add text to image');
@@ -99,7 +85,7 @@ export class PanelService {
           maxBubbleWidth,
         );
         bubbleHeight =
-          (wrappedText.length + 1) * fontSize * lineSpacing + padding * 2;
+          (wrappedText.length + (speaker ? 1 : 0)) * fontSize * lineSpacing + padding * 2;
         fontSize--;
       } while (
         (bubbleWidth > maxBubbleWidth || bubbleHeight > maxBubbleHeight) &&
@@ -119,15 +105,21 @@ export class PanelService {
 
       ctx.fillStyle = 'black';
       ctx.textBaseline = 'top';
-      ctx.font = `bold ${fontSize}px Arial`;
-      ctx.fillText(speaker, bubbleX + padding, bubbleY + padding);
+      
+      let textY = bubbleY + padding;
+
+      if (speaker) {
+        ctx.font = `bold ${fontSize}px Arial`;
+        ctx.fillText(speaker, bubbleX + padding, textY);
+        textY += fontSize * lineSpacing;
+      }
 
       ctx.font = `${fontSize}px Arial`;
       wrappedText.forEach((line, lineIndex) => {
         ctx.fillText(
           line,
           bubbleX + padding,
-          bubbleY + padding + fontSize * lineSpacing * (lineIndex + 1),
+          textY + fontSize * lineSpacing * lineIndex,
         );
       });
     });
@@ -165,19 +157,24 @@ export class PanelService {
   }
 
   private groupTextsBySpeaker(texts: string[]): [string, string[]][] {
-    const groups: { [speaker: string]: string[] } = {};
+    if (texts.length === 0) return [];
 
-    texts.forEach((text) => {
-      const [speaker, ...rest] = text.split(':');
-      const content = rest.join(':').trim();
+    const hasSpeaker = texts[0].includes(':');
 
-      if (!groups[speaker]) {
-        groups[speaker] = [];
-      }
-      groups[speaker].push(content);
-    });
-
-    return Object.entries(groups);
+    if (hasSpeaker) {
+      const groups: { [speaker: string]: string[] } = {};
+      texts.forEach((text) => {
+        const [speaker, ...rest] = text.split(':');
+        const content = rest.join(':').trim();
+        if (!groups[speaker]) {
+          groups[speaker] = [];
+        }
+        groups[speaker].push(content);
+      });
+      return Object.entries(groups);
+    } else {
+      return [['', texts]];
+    }
   }
 
   private drawBubble(
