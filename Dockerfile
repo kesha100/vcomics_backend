@@ -13,9 +13,11 @@ COPY package*.json ./
 # Install dependencies
 RUN npm install
 
-# Copy the Prisma schema and rest of the application files
-COPY prisma ./prisma
+# Copy the rest of the application files
 COPY . .
+
+# Ensure the Prisma schema is copied
+COPY ./prisma/schema.prisma prisma/schema.prisma
 
 # Generate Prisma client
 RUN npm run prisma:generate
@@ -39,7 +41,7 @@ COPY --from=build /app/prisma ./prisma
 COPY package*.json ./
 
 # Install production dependencies
-RUN npm install --only=production
+RUN npm install --production
 
 # Copy a custom entrypoint script
 COPY entrypoint.sh /entrypoint.sh
