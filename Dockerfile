@@ -30,12 +30,12 @@ RUN apt-get update && apt-get install -y redis-server curl
 WORKDIR /app
 
 # Copy built assets from the build stage
-COPY --from=build /app/dist ./dist
-COPY --from=build /app/node_modules ./node_modules
-COPY --from=build /app/package*.json ./
+COPY --from=build /apps/api//dist ./dist
+COPY --from=build /apps/api/node_modules ./node_modules
+COPY --from=build /apps/api/package*.json ./
 
 # Copy Prisma files
-COPY --from=build /app/prisma ./prisma
+COPY --from=build /apps/api/prisma ./prisma
 
 # Copy the entrypoint script
 COPY entrypoint.sh /entrypoint.sh
