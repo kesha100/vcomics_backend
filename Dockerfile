@@ -10,7 +10,7 @@ WORKDIR /apps
 COPY package*.json ./
 
 # Install dependencies
-RUN npm i
+RUN npm ci
 
 # Copy the rest of the application files
 COPY . .
@@ -24,24 +24,24 @@ RUN npm run build
 # Production Stage
 FROM node:18-slim
 
-# Install Redis and other necessary tools
-RUN apt-get update && apt-get install -y redis-server curl
-
 WORKDIR /apps
 
+# Install Redis server if required by the app (consider using a separate container for Redis in production)
+RUN apt-get update && apt-get install -y redis-server curl
+
 # Copy built assets from the build stage
-COPY --from=build /apps/api//dist ./dist
-COPY --from=build /apps/api/node_modules ./node_modules
-COPY --from=build /apps/api/package*.json ./
+COPY --from=build /apps/dist ./dist
+COPY --from=build /apps/node_modules ./node_modules
+COPY --from=build /apps/package*.json ./
 
 # Copy Prisma files
-COPY --from=build /apps/api/prisma ./prisma
+COPY --from=build /apps/prisma ./prisma
 
 # Copy the entrypoint script
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
-# Expose port
+# Expose the port your application runs on
 EXPOSE 3000
 
 # Use the entrypoint script to start the application
