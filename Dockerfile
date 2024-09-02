@@ -4,7 +4,7 @@ FROM node:18 AS build
 # Install Python and required build tools
 RUN apt-get update && apt-get install -y python3 python3-dev python3-pip build-essential
 
-WORKDIR /app
+WORKDIR /apps
 
 # Copy package.json and package-lock.json
 COPY package*.json ./
@@ -27,7 +27,7 @@ FROM node:18-slim
 # Install Redis and other necessary tools
 RUN apt-get update && apt-get install -y redis-server curl
 
-WORKDIR /app
+WORKDIR /apps
 
 # Copy built assets from the build stage
 COPY --from=build /apps/api//dist ./dist
